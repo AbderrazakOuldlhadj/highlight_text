@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:get/get.dart';
+import 'package:highlight_texto/controller.dart';
 
 const sharedText = 'Flutter is Google’s UI toolkit for building beautiful, '
     'natively compiled applications for mobile, web, and desktop from a single codebase.';
@@ -32,9 +34,9 @@ class _HomePageState extends State<HomePage> {
   TextSelection _currentSelection = const TextSelection.collapsed(offset: 0);
 
   void _onSelectionChange(TextSelection textSelection) {
-    setState(() {
+    /*setState(() {
       _currentSelection = textSelection;
-    });
+    });*/
   }
 
   @override
@@ -49,8 +51,8 @@ class _HomePageState extends State<HomePage> {
             style: sharedTextStyle,
             onSelectionChange: _onSelectionChange,
           ),
-          const SizedBox(height: 48),
-          /*Text(
+          /*const SizedBox(height: 48),
+          Text(
             selectedText.isNotEmpty ? selectedText : 'No Text Selected',
             style: sharedTextStyle.copyWith(
               color: Colors.grey,
@@ -96,11 +98,13 @@ class SelectableTextGoal extends StatefulWidget {
 }
 
 class _SelectableTextGoalState extends State<SelectableTextGoal> {
+  var highController = Get.put(HighlightController());
   final _textKey = GlobalKey();
 
   final _textBoxRects = <Rect>[];
 
   final _selectionRects = <Rect>[];
+  final _selectionRects2 = <Rect>[];
   TextSelection? _textSelection;
   int? _selectionBaseOffset;
 
@@ -108,7 +112,7 @@ class _SelectableTextGoalState extends State<SelectableTextGoal> {
 
   bool showColors = false;
 
-  List<Color> colors = [
+  List<MaterialColor> colors = [
     Colors.green,
     Colors.red,
     Colors.pink,
@@ -148,6 +152,7 @@ class _SelectableTextGoalState extends State<SelectableTextGoal> {
   }
 
   void _onDragStart(DragStartDetails details) {
+    highController.color.value = Colors.lightBlue;
     setState(() {
       _selectionBaseOffset =
           _getTextPositionAtOffset(details.localPosition).offset;
@@ -169,14 +174,14 @@ class _SelectableTextGoalState extends State<SelectableTextGoal> {
 
       _onUserSelectionChange(textSelection);
     });
-    // print('update');
+    print('update');
   }
 
   void _onDragEnd(DragEndDetails details) {
-    setState(() {
-      _selectionBaseOffset = null;
+   /* setState(() {
+      //_selectionBaseOffset = null;
       //widget.paintTextBoxes = !widget.paintTextBoxes;
-    });
+    });*/
     print("end");
   }
 
@@ -188,7 +193,7 @@ class _SelectableTextGoalState extends State<SelectableTextGoal> {
     print("cancel");
   }
 
-  /* void _onMouseMove(PointerEvent event) {
+  /*void _onMouseMove(PointerEvent event) {
     if (!widget.changeCursor) {
       return;
     }
@@ -211,9 +216,13 @@ class _SelectableTextGoalState extends State<SelectableTextGoal> {
   void _updateSelectionDisplay() {
     setState(() {
       final selectionRects = _computeSelectionRects(_textSelection!);
+      final selectionRects2 = _computeSelectionRects(_textSelection!);
       _selectionRects
         ..clear()
         ..addAll(selectionRects);
+      _selectionRects2
+        ..clear()
+        ..addAll(selectionRects2);
       _caretRect = _textSelection != null
           ? _computeCursorRectForTextOffset(_textSelection!.extentOffset)
           : null;
@@ -258,7 +267,7 @@ class _SelectableTextGoalState extends State<SelectableTextGoal> {
     return _renderParagraph!.getPositionForOffset(textOffset);
   }
 
-  /*bool _isOffsetOverText(Offset localOffset) {
+  bool _isOffsetOverText(Offset localOffset) {
     final rects = _computeAllTextBoxRects();
     for (final rect in rects) {
       if (rect.contains(localOffset)) {
@@ -266,7 +275,7 @@ class _SelectableTextGoalState extends State<SelectableTextGoal> {
       }
     }
     return false;
-  }*/
+  }
 
   List<Rect> _computeAllTextBoxRects() {
     if (_textKey.currentContext == null) {
@@ -299,72 +308,62 @@ class _SelectableTextGoalState extends State<SelectableTextGoal> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onPanStart: widget.allowSelection ? _onDragStart : null,
-      onPanUpdate: widget.allowSelection ? _onDragUpdate : null,
-      onPanEnd: widget.allowSelection ? _onDragEnd : null,
-      onPanCancel: widget.allowSelection ? _onDragCancel : null,
-      behavior: HitTestBehavior.translucent,
-      child: Stack(
-        children: [
-          CustomPaint(
+    return Stack(
+      children: [
+        Obx(
+        ()=> CustomPaint(
             painter: _SelectionPainter(
-              color: widget.selectionColor,
+              color: highController.color.value,
               rects: _selectionRects,
             ),
           ),
-          /*if (widget.paintTextBoxes)
-            CustomPaint(
-              painter: _SelectionPainter(
-                color: widget.textBoxesColor,
-                rects: _textBoxRects,
-                fill: false,
-              ),
-            ),*/
-          Text(
+        ),
+
+        GestureDetector(
+          onPanStart: widget.allowSelection ? _onDragStart : null,
+          onPanUpdate: widget.allowSelection ? _onDragUpdate : null,
+          onPanEnd: widget.allowSelection ? _onDragEnd : null,
+          onPanCancel: widget.allowSelection ? _onDragCancel : null,
+          behavior: HitTestBehavior.translucent,
+          child: Text(
             widget.text,
             key: _textKey,
             style: widget.style,
           ),
-          CustomPaint(
-            painter: _SelectionPainter(
-              color: widget.caretColor,
-              rects: _caretRect != null ? [_caretRect!] : const [],
-            ),
+        ),
+        CustomPaint(
+          painter: _SelectionPainter(
+            color: widget.caretColor,
+            rects: _caretRect != null ? [_caretRect!] : const [],
           ),
-          if (_selectionRects.isNotEmpty)
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  showColors = !showColors;
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: !showColors
-                    ? const Text(
-                        'Highlight',
-                        style: TextStyle(color: Colors.white),
-                      )
-                    : Row(
-                  mainAxisSize: MainAxisSize.min,
-                        children: colors
-                            .map((e) => Container(
-                          margin: const EdgeInsets.all(5),
-                                  height: 40,
-                                  width: 40,
-                                  color: e,
-                                ))
-                            .toList(),
+        ),
+        if (_selectionRects.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: colors
+                  .map(
+                    (e) => GestureDetector(
+                      onTap: () {
+                        highController.color.value = e;
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.all(5),
+                        height: 25,
+                        width: 25,
+                        color: e,
                       ),
-              ),
-            )
-        ],
-      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          )
+      ],
     );
   }
 }

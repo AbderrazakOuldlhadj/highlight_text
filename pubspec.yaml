@@ -35,9 +35,11 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  highlight_text: ^1.6.0
-  word_selectable_text: ^0.2.0
-  super_text_layout: ^0.1.4
+#  highlight_text: ^1.6.0
+#  word_selectable_text: ^0.2.0
+#  super_text_layout: ^0.1.4
+  get: ^4.6.5
+  color_text_highlighter: ^1.0.0+4
 
 
 
